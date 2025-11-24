@@ -40,6 +40,7 @@ public class NoteDAO {
      * Create a new note
      */
     public boolean createNote(int notebookId, String content) {
+        // TODO: Validate content length and format
         String sql = "INSERT INTO Notes (notebook_id, content) VALUES (?, ?)";
 
         try (Connection conn = DatabaseConfig.getConnection();

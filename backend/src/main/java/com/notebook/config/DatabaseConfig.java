@@ -1,8 +1,9 @@
 package com.notebook.config;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -15,74 +16,49 @@ public class DatabaseConfig {
 
     // Database connection parameters
     private static final String DATABASE_URL = getDatabaseUrl();
-    // Parse connection details from DATABASE_URL
-    private static final String DB_HOST;
-    private static final String DB_PORT;
-    private static final String DB_NAME;
-    private static final String DB_USER;
-    private static final String DB_PASSWORD;
-    private static final String JDBC_URL;
+    private static final HikariDataSource dataSource;
 
     static {
-        // Parse the PostgreSQL URL: postgresql://user:password@host:port/database
         try {
-            String url = DATABASE_URL;
-
-            // Remove postgresql:// prefix
-            url = url.replace("postgresql://", "");
-
-            // Extract user:password
+            // Parse the PostgreSQL URL: postgresql://user:password@host:port/database
+            String url = DATABASE_URL.replace("postgresql://", "");
             String[] parts = url.split("@");
             String[] credentials = parts[0].split(":");
-            DB_USER = credentials[0];
-            DB_PASSWORD = credentials[1];
-
-            // Extract host:port/database
             String[] hostParts = parts[1].split("/");
             String[] hostPort = hostParts[0].split(":");
-            DB_HOST = hostPort[0];
-            DB_PORT = hostPort.length > 1 ? hostPort[1] : "5432";
-            DB_NAME = hostParts[1];
 
-            // Construct JDBC URL
-            JDBC_URL = String.format("jdbc:postgresql://%s:%s/%s", DB_HOST, DB_PORT, DB_NAME);
+            String dbUser = credentials[0];
+            String dbPassword = credentials[1];
+            String dbHost = hostPort[0];
+            String dbPort = hostPort.length > 1 ? hostPort[1] : "5432";
+            String dbName = hostParts[1];
+            String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName);
 
-            // Load PostgreSQL JDBC driver
-            Class.forName("org.postgresql.Driver");
-            System.out.println("PostgreSQL JDBC Driver loaded successfully");
+            // Configure HikariCP
+            HikariConfig config = new HikariConfig();
+            config.setJdbcUrl(jdbcUrl);
+            config.setUsername(dbUser);
+            config.setPassword(dbPassword);
+            config.setDriverClassName("org.postgresql.Driver");
 
-        } catch (ClassNotFoundException e) {
-            System.err.println("PostgreSQL JDBC Driver not found!");
-            throw new RuntimeException("Failed to load PostgreSQL driver", e);
+            // Pool settings
+            config.setMaximumPoolSize(10);
+            config.setMinimumIdle(2);
+            config.setIdleTimeout(30000);
+            config.setConnectionTimeout(30000);
+
+            dataSource = new HikariDataSource(config);
+            System.out.println("HikariCP Connection Pool initialized successfully");
+
         } catch (Exception e) {
-            throw new RuntimeException("Failed to parse DATABASE_URL", e);
+            throw new RuntimeException("Failed to initialize database connection pool", e);
         }
     }
 
-    /**
-     * Get a database connection
-     * 
-     * @return Connection object
-     * @throws SQLException if connection fails
-     */
     public static Connection getConnection() throws SQLException {
-        try {
-            Connection conn = DriverManager.getConnection(JDBC_URL, DB_USER, DB_PASSWORD);
-            System.out.println("Database connection established successfully");
-            return conn;
-        } catch (SQLException e) {
-            System.err.println("Failed to establish database connection!");
-            System.err.println("JDBC URL: " + JDBC_URL);
-            System.err.println("User: " + DB_USER);
-            throw e;
-        }
+        return dataSource.getConnection();
     }
 
-    /**
-     * Test the database connection
-     * 
-     * @return true if connection is successful
-     */
     public static boolean testConnection() {
         try (Connection conn = getConnection()) {
             return conn != null && !conn.isClosed();
@@ -92,29 +68,21 @@ public class DatabaseConfig {
         }
     }
 
-    /**
-     * Close a database connection safely
-     * 
-     * @param conn Connection to close
-     */
     public static void closeConnection(Connection conn) {
         if (conn != null) {
             try {
-                conn.close();
-                System.out.println("Database connection closed");
+                conn.close(); // Returns connection to the pool
             } catch (SQLException e) {
                 System.err.println("Error closing database connection: " + e.getMessage());
             }
         }
     }
 
-    /**
-     * Get database connection info (for debugging, without password)
-     * 
-     * @return Connection info string
-     */
     public static String getConnectionInfo() {
-        return String.format("Database: %s@%s:%s/%s", DB_USER, DB_HOST, DB_PORT, DB_NAME);
+        if (dataSource != null) {
+            return String.format("Database: %s (%s)", dataSource.getJdbcUrl(), dataSource.getUsername());
+        }
+        return "Database: Not initialized";
     }
 
     private static String getDatabaseUrl() {

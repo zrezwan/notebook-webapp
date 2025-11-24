@@ -23,7 +23,7 @@ DATABASE_URL=
 
 ### Java Configuration
 
-The `DatabaseConfig` class (`backend/src/main/java/com.notebook/config/DatabaseConfig.java`) handles database connections:
+The `DatabaseConfig` class (`backend/src/main/java/com/notebook/config/DatabaseConfig.java`) handles database connections:
 
 ```java
 // Get a connection

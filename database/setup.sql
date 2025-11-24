@@ -59,7 +59,8 @@ CREATE TABLE NotebookCollaborators (
     user_id INTEGER NOT NULL,
     role role_type NOT NULL,
     FOREIGN KEY (notebook_id) REFERENCES Notebooks(notebook_id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
+    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+    UNIQUE (notebook_id, user_id)
 );
 
 -- Create Notes table

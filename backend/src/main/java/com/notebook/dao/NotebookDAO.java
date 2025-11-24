@@ -2,7 +2,6 @@ package com.notebook.dao;
 
 import com.notebook.config.DatabaseConfig;
 import com.notebook.models.Notebook;
-import com.notebook.models.User;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -143,6 +142,8 @@ public class NotebookDAO {
      * Add a collaborator by email
      */
     public boolean addCollaboratorByEmail(int notebookId, String email, String role) {
+        // TODO: Verify that the user making the request is the notebook owner or has
+        // permission to add collaborators
         // First find the user ID
         String findUserSql = "SELECT user_id FROM Users WHERE email = ?";
         int collaboratorId = -1;
@@ -164,14 +165,10 @@ public class NotebookDAO {
 
         // Now insert the collaborator
         // Use Postgres CAST for the enum type
-        String insertSql = "INSERT INTO NotebookCollaborators (notebook_id, user_id, role) " +
-                "VALUES (?, ?, ?::role_type) " +
-                "ON CONFLICT DO NOTHING"; // Prevent duplicates if you had a unique constraint (optional)
-
         // Note: Our schema doesn't have a unique constraint on (notebook_id, user_id)
         // yet,
         // but it's good practice. For now, simple insert.
-        insertSql = "INSERT INTO NotebookCollaborators (notebook_id, user_id, role) VALUES (?, ?, ?::role_type)";
+        String insertSql = "INSERT INTO NotebookCollaborators (notebook_id, user_id, role) VALUES (?, ?, ?::role_type)";
 
         try (Connection conn = DatabaseConfig.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(insertSql)) {

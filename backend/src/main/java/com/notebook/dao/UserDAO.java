@@ -25,13 +25,13 @@ public class UserDAO {
             if (rs.next()) {
                 String storedHash = rs.getString("password_hash");
                 // TODO: Replace with BCrypt.checkpw(password, storedHash)
-                // For now, we'll assume the input password matches if it's the same string
-                // (This is just a placeholder logic - in reality you MUST use BCrypt)
-
-                // For the sample data, we know the password is "password123" and the hash is
-                // hardcoded.
-                // Let's just return the user if the email exists for now to unblock testing,
-                // or you can implement actual BCrypt check here if you add the dependency.
+                // For now, perform a direct equality check to ensure we validate the password.
+                // NOTE: If your DB stores hashed passwords (e.g. BCrypt), this will fail -
+                // add the BCrypt dependency and use BCrypt.checkpw for proper verification.
+                if (storedHash == null || !password.equals(storedHash)) {
+                    // Password did not match
+                    return null;
+                }
 
                 User user = new User();
                 user.setUserId(rs.getInt("user_id"));
@@ -68,6 +68,8 @@ public class UserDAO {
      */
     public boolean registerUser(String name, String email, String password) {
         // TODO: Hash password with BCrypt before storing
+        // TODO: Add validation for: (1) non-empty name, email, and password, (2) valid
+        // email format, (3) password minimum length/complexity requirements.
         String passwordHash = password; // placeholder
 
         String sql = "INSERT INTO Users (name, email, password_hash) VALUES (?, ?, ?)";
