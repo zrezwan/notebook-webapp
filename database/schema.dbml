@@ -1,0 +1,67 @@
+enum Role {
+  owner
+  editor
+  viewer
+}
+
+enum Visibility {
+  public
+  private
+}
+
+table Users {
+  user_id int [pk]
+  name varchar(255)
+  email varchar(255) [unique]
+  password_hash varchar(255)
+  created_at datetime
+}
+
+table Notebooks {
+  notebook_id int [pk]
+  title varchar(255)
+  owner_id int [ref: > Users.user_id]
+  created_at datetime
+  updated_at datetime
+  course_name varchar(255)
+  visibility Visibility
+}
+
+table NotebookCollaborators {
+  id int [pk]
+  notebook_id int [ref: > Notebooks.notebook_id]
+  user_id int [ref: > Users.user_id]
+  role Role
+}
+
+table Notes {
+  note_id int [pk]
+  notebook_id int [ref: > Notebooks.notebook_id]
+  content text
+  created_at datetime
+  updated_at datetime
+}
+
+table Questions {
+  question_id int [pk]
+  note_id int [ref: > Notes.note_id]
+  user_id int [ref: > Users.user_id]
+  question_text text
+  timestamp datetime
+}
+
+table Answers {
+  answer_id int [pk]
+  question_id int [ref: > Questions.question_id]
+  user_id int [ref: > Users.user_id]
+  answer_text text
+  timestamp datetime
+}
+
+table Messages {
+  message_id int [pk]
+  notebook_id int [ref: > Notebooks.notebook_id]
+  user_id int [ref: > Users.user_id]
+  message_text text
+  timestamp datetime
+}
