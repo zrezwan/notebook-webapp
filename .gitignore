@@ -1,0 +1,19 @@
+# Environment variables (contains sensitive credentials)
+.env
+backend/.env
+*.env
+
+# Build artifacts
+backend/target/
+backend/.classpath
+backend/.project
+backend/.settings/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
