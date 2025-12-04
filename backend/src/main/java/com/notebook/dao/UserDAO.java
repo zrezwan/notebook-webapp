@@ -2,16 +2,13 @@ package com.notebook.dao;
 
 import com.notebook.config.DatabaseConfig;
 import com.notebook.models.User;
+import com.notebook.util.PasswordUtil;
 import java.sql.*;
 
 public class UserDAO {
 
     /**
-     * Authenticate a user by email and password
-     * Note: In a real app, use BCrypt to check password hash.
-     * For this MVP, we'll do simple string comparison or assume the DB has hashed
-     * passwords
-     * and we're comparing against that (simplified).
+     * Authenticate a user by email and password using BCrypt
      */
     public User loginUser(String email, String password) {
         String sql = "SELECT * FROM Users WHERE email = ?";
@@ -24,12 +21,8 @@ public class UserDAO {
 
             if (rs.next()) {
                 String storedHash = rs.getString("password_hash");
-                // TODO: Replace with BCrypt.checkpw(password, storedHash)
-                // For now, perform a direct equality check to ensure we validate the password.
-                // NOTE: If your DB stores hashed passwords (e.g. BCrypt), this will fail -
-                // add the BCrypt dependency and use BCrypt.checkpw for proper verification.
-                if (storedHash == null || !password.equals(storedHash)) {
-                    // Password did not match
+
+                if (storedHash == null || !PasswordUtil.checkPassword(password, storedHash)) {
                     return null;
                 }
 
@@ -37,7 +30,6 @@ public class UserDAO {
                 user.setUserId(rs.getInt("user_id"));
                 user.setName(rs.getString("name"));
                 user.setEmail(rs.getString("email"));
-                user.setPasswordHash(storedHash);
                 user.setCreatedAt(rs.getTimestamp("created_at"));
                 return user;
             }
@@ -64,30 +56,32 @@ public class UserDAO {
     }
 
     /**
-     * Register a new user
+     * Register a new user with a pre-hashed password
      */
-    public boolean registerUser(String name, String email, String password) {
-        // TODO: Hash password with BCrypt before storing
-        // TODO: Add validation for: (1) non-empty name, email, and password, (2) valid
-        // email format, (3) password minimum length/complexity requirements.
-        String passwordHash = password; // placeholder
-
-        String sql = "INSERT INTO Users (name, email, password_hash) VALUES (?, ?, ?)";
+    public User registerUser(String name, String email, String hashedPassword) {
+        String sql = "INSERT INTO Users (name, email, password_hash) VALUES (?, ?, ?) RETURNING user_id, created_at";
 
         try (Connection conn = DatabaseConfig.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, name);
             stmt.setString(2, email);
-            stmt.setString(3, passwordHash);
+            stmt.setString(3, hashedPassword);
 
-            int rowsAffected = stmt.executeUpdate();
-            return rowsAffected > 0;
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                User user = new User();
+                user.setUserId(rs.getInt("user_id"));
+                user.setName(name);
+                user.setEmail(email);
+                user.setCreatedAt(rs.getTimestamp("created_at"));
+                return user;
+            }
 
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
         }
+        return null;
     }
 
     /**
