@@ -4,23 +4,35 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import io.github.cdimascio.dotenv.Dotenv;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
-
-/**
- * Database configuration and connection manager for PostgreSQL
- */
 public class DatabaseConfig {
-
-    // Database connection parameters
-    private static final String DATABASE_URL = getDatabaseUrl();
+    private static final Dotenv dotenv = loadDotenv();
+    private static final String DATABASE_URL = getEnv("DATABASE_URL");
     private static final HikariDataSource dataSource;
+
+    private static Dotenv loadDotenv() {
+        String[] paths = {
+            "src/main/resources",
+            "backend/src/main/resources",
+            "../backend/src/main/resources",
+            System.getProperty("catalina.base", "."),
+            "."
+        };
+
+        for (String path : paths) {
+            try {
+                return Dotenv.configure()
+                        .directory(path)
+                        .load();
+            } catch (Exception ignored) {}
+        }
+
+        return Dotenv.configure().ignoreIfMissing().load();
+    }
 
     static {
         try {
-            // Parse the PostgreSQL URL: postgresql://user:password@host:port/database
             String url = DATABASE_URL.replace("postgresql://", "");
             String[] parts = url.split("@");
             String[] credentials = parts[0].split(":");
@@ -34,14 +46,11 @@ public class DatabaseConfig {
             String dbName = hostParts[1];
             String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s", dbHost, dbPort, dbName);
 
-            // Configure HikariCP
             HikariConfig config = new HikariConfig();
             config.setJdbcUrl(jdbcUrl);
             config.setUsername(dbUser);
             config.setPassword(dbPassword);
             config.setDriverClassName("org.postgresql.Driver");
-
-            // Pool settings
             config.setMaximumPoolSize(10);
             config.setMinimumIdle(2);
             config.setIdleTimeout(30000);
@@ -53,6 +62,14 @@ public class DatabaseConfig {
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize database connection pool", e);
         }
+    }
+
+    public static String getEnv(String key) {
+        String value = System.getenv(key);
+        if (value != null && !value.isEmpty()) {
+            return value;
+        }
+        return dotenv.get(key);
     }
 
     public static Connection getConnection() throws SQLException {
@@ -71,7 +88,7 @@ public class DatabaseConfig {
     public static void closeConnection(Connection conn) {
         if (conn != null) {
             try {
-                conn.close(); // Returns connection to the pool
+                conn.close();
             } catch (SQLException e) {
                 System.err.println("Error closing database connection: " + e.getMessage());
             }
@@ -83,26 +100,5 @@ public class DatabaseConfig {
             return String.format("Database: %s (%s)", dataSource.getJdbcUrl(), dataSource.getUsername());
         }
         return "Database: Not initialized";
-    }
-
-    private static String getDatabaseUrl() {
-        String url = System.getenv("DATABASE_URL");
-        if (url != null)
-            return url;
-
-        try {
-            java.nio.file.Path path = Paths.get(".env");
-            if (Files.exists(path)) {
-                List<String> lines = Files.readAllLines(path);
-                for (String line : lines) {
-                    if (line.trim().startsWith("DATABASE_URL=")) {
-                        return line.split("=", 2)[1].trim();
-                    }
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Failed to read .env file: " + e.getMessage());
-        }
-        return null;
     }
 }
