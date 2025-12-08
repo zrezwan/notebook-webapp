@@ -96,5 +96,35 @@ public class ChatServlet extends BaseServlet {
     private static class ChatRequest {
         String text;
     }
+    
+    @Override
+    protected void doDelete(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        String path = request.getPathInfo();
+        int userId = getUserId(request);
+
+        if (path != null && path.matches("/\\d+")) {
+            int messageId = Integer.parseInt(path.substring(1));
+            handleDeleteMessage(request, response, userId, messageId);
+        } else {
+            sendError(response, 404, "Endpoint not found");
+        }
+    }
+
+    private void handleDeleteMessage(HttpServletRequest request, HttpServletResponse response,
+            int userId, int messageId) throws IOException {
+        
+        // Optional: Check if user owns this message
+        // boolean deleted = messageDAO.deleteMessage(messageId, userId);
+        
+        boolean deleted = messageDAO.deleteMessage(messageId);
+
+        if (!deleted) {
+            sendError(response, 500, "Failed to delete message");
+            return;
+        }
+
+        sendSuccess(response, Map.of("message", "Message deleted successfully"));
+    }
 }
 

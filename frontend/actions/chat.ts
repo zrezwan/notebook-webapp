@@ -28,6 +28,34 @@ async function getAuthToken(): Promise<string | null> {
   return cookieStore.get(COOKIE_NAME)?.value ?? null;
 }
 
+export const deleteMessage = async (
+  messageId: number
+): Promise<Response<{ message: string }>> => {
+  try {
+    const token = await getAuthToken();
+    if (!token) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    const res = await fetch(`${process.env.API_URL}/notebooks/messages/${messageId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const json: ApiResponse<{ message: string }> = await res.json();
+
+    if (!json.success) {
+      return { success: false, error: json.error || "Failed to delete message" };
+    }
+
+    return { success: true, data: json.data || { message: "Message deleted" } };
+  } catch {
+    return { success: false, error: "Failed to connect to server" };
+  }
+};
+
 export const getMessages = async (
   notebookId: number
 ): Promise<ChatMessage[]> => {
@@ -77,4 +105,3 @@ export const sendMessage = async (
     return { success: false, error: "Failed to connect to server" };
   }
 };
-

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AlertCircle, Plus, Save, X } from "lucide-react";
-import { getMessages, sendMessage, ChatMessage } from "@/actions/chat";
+import { getMessages, sendMessage, deleteMessage, ChatMessage } from "@/actions/chat";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
@@ -63,9 +63,19 @@ export function ChatPanel({ notebookId }: Props) {
     await load();
     setIsSending(false);
   }
-
-  function handleDelete(id: number) {
+  
+  async function handleDelete(id: number) {
+    // Optimistically remove from UI
     setMessages((prev) => prev.filter((m) => m.messageId !== id));
+    
+    // Delete from database
+    const result = await deleteMessage(id);
+    
+    if (!result.success) {
+      // If failed, reload to restore the message
+      setError(result.error);
+      await load();
+    }
   }
 
   return (
