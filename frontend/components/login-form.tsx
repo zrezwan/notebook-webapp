@@ -8,19 +8,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AlertCircle } from "lucide-react";
 
-import { login } from "@/actions/auth";
+import { login, guestLogin } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/password-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -54,30 +47,32 @@ export function LoginForm() {
       return;
     }
 
-    router.push("/home");
+    router.push("/notebooks");
   }
 
   return (
-    <div className="space-y-6">
+    <>
       {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="size-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4">
+          <Alert variant="destructive">
+            <AlertCircle className="size-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </div>
       )}
+      <div className="space-y-6">
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
+              <FormItem className="space-y-1.5">
                 <FormControl>
                   <Input
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="Email"
                     autoComplete="email"
                     {...field}
                   />
@@ -91,11 +86,10 @@ export function LoginForm() {
             control={form.control}
             name="password"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
+              <FormItem className="space-y-1.5">
                 <FormControl>
                   <PasswordInput
-                    placeholder="Enter your password"
+                    placeholder="Password"
                     autoComplete="current-password"
                     {...field}
                   />
@@ -105,18 +99,35 @@ export function LoginForm() {
             )}
           />
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Signing in..." : "Sign in"}
-          </Button>
+          <div className="grid grid-cols-3 gap-2">
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Signing in..." : "Sign in"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isLoading}
+              onClick={async () => {
+                setError(null);
+                setIsLoading(true);
+                const result = await guestLogin();
+                if (!result.success) {
+                  setError(result.error);
+                  setIsLoading(false);
+                  return;
+                }
+                router.push("/notebooks");
+              }}
+            >
+              Guest
+            </Button>
+            <Button asChild variant="secondary" disabled={isLoading}>
+              <Link href="/register">Sign up</Link>
+            </Button>
+          </div>
         </form>
       </Form>
-
-      <p className="text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{" "}
-        <Link href="/register" className="text-primary hover:underline">
-          Sign up
-        </Link>
-      </p>
-    </div>
+      </div>
+    </>
   );
 }

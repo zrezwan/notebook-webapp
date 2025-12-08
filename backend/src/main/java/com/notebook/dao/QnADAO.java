@@ -116,4 +116,19 @@ public class QnADAO {
             return false;
         }
     }
+
+    public Integer getNoteIdForQuestion(int questionId) {
+        String sql = "SELECT note_id FROM Questions WHERE question_id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, questionId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("note_id");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }

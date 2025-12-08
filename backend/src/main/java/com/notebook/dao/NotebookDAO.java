@@ -1,6 +1,7 @@
 package com.notebook.dao;
 
 import com.notebook.config.DatabaseConfig;
+import com.notebook.models.Collaborator;
 import com.notebook.models.Notebook;
 import java.sql.*;
 import java.util.ArrayList;
@@ -56,6 +57,74 @@ public class NotebookDAO {
             ResultSet rs = stmt.executeQuery();
             return rs.next();
 
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Check if user is owner
+     */
+    public boolean isOwner(int userId, int notebookId) {
+        String sql = "SELECT 1 FROM Notebooks WHERE notebook_id = ? AND owner_id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, notebookId);
+            stmt.setInt(2, userId);
+            ResultSet rs = stmt.executeQuery();
+            return rs.next();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Create notebook and return id
+     */
+    public Integer createNotebook(int ownerId, String title, String courseName, String visibility) {
+        // visibility is a PostgreSQL enum (visibility_type); cast the parameter to avoid type errors
+        String sql = "INSERT INTO Notebooks (title, owner_id, course_name, visibility) VALUES (?, ?, ?, ?::visibility_type) RETURNING notebook_id";
+        try (Connection conn = DatabaseConfig.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, title);
+            stmt.setInt(2, ownerId);
+            stmt.setString(3, courseName);
+            stmt.setString(4, visibility);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("notebook_id");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public Notebook getNotebookById(int notebookId) {
+        String sql = "SELECT n.*, u.name as owner_name, 'Owner' as user_role " +
+                "FROM Notebooks n JOIN Users u ON n.owner_id = u.user_id WHERE n.notebook_id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, notebookId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return mapResultSetToNotebook(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public boolean deleteNotebook(int notebookId) {
+        String sql = "DELETE FROM Notebooks WHERE notebook_id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, notebookId);
+            int rows = stmt.executeUpdate();
+            return rows > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -180,6 +249,43 @@ public class NotebookDAO {
             int rows = stmt.executeUpdate();
             return rows > 0;
 
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public List<Collaborator> getCollaborators(int notebookId) {
+        List<Collaborator> collaborators = new ArrayList<>();
+        String sql = "SELECT nc.user_id, nc.role, u.name, u.email " +
+                "FROM NotebookCollaborators nc JOIN Users u ON nc.user_id = u.user_id " +
+                "WHERE nc.notebook_id = ? ORDER BY u.name ASC";
+        try (Connection conn = DatabaseConfig.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, notebookId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                Collaborator c = new Collaborator();
+                c.setUserId(rs.getInt("user_id"));
+                c.setName(rs.getString("name"));
+                c.setEmail(rs.getString("email"));
+                c.setRole(rs.getString("role"));
+                collaborators.add(c);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return collaborators;
+    }
+
+    public boolean removeCollaborator(int notebookId, int userId) {
+        String sql = "DELETE FROM NotebookCollaborators WHERE notebook_id = ? AND user_id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, notebookId);
+            stmt.setInt(2, userId);
+            int rows = stmt.executeUpdate();
+            return rows > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;

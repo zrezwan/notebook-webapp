@@ -8,6 +8,7 @@ import Link from "next/link";
 import { getPage } from "@/actions/pages";
 import { PageEditForm } from "@/components/page-edit-form";
 import { DeletePageButton } from "@/components/delete-page-button";
+import { QnAPanel } from "@/components/qna-panel";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -29,23 +30,14 @@ type Page = {
 export default function PageEditPage({
   params,
 }: {
-  params: Promise<{ notebookId: string; pageId: string }>;
+  params: { notebookId: string; pageId: string };
 }) {
   const router = useRouter();
   const [page, setPage] = useState<Page | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [notebookId, setNotebookId] = useState<string>("");
-  const [pageId, setPageId] = useState<string>("");
-
-  useEffect(() => {
-    async function loadParams() {
-      const resolvedParams = await params;
-      setNotebookId(resolvedParams.notebookId);
-      setPageId(resolvedParams.pageId);
-    }
-    loadParams();
-  }, [params]);
+  const notebookId = params.notebookId;
+  const pageId = params.pageId;
 
   useEffect(() => {
     async function loadPage() {
@@ -53,7 +45,6 @@ export default function PageEditPage({
 
       setIsLoading(true);
       const result = await getPage(parseInt(pageId));
-
       if (!result.success) {
         setError(result.error);
         setIsLoading(false);
@@ -65,6 +56,8 @@ export default function PageEditPage({
     }
 
     loadPage();
+    const id = setInterval(loadPage, 3000);
+    return () => clearInterval(id);
   }, [pageId]);
 
   function handleDeleteSuccess() {
@@ -102,7 +95,7 @@ export default function PageEditPage({
 
   return (
     <div className="min-h-screen p-4 md:p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <Link href={`/notebooks/${notebookId}`}>
             <Button variant="ghost">
@@ -116,21 +109,26 @@ export default function PageEditPage({
           />
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Edit Page</CardTitle>
-            <CardDescription>
-              Last updated: {new Date(page.updatedAt).toLocaleString()}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PageEditForm
-              pageId={page.noteId}
-              initialContent={page.content}
-              onSuccess={handleEditSuccess}
-            />
-          </CardContent>
-        </Card>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Edit Page</CardTitle>
+              <CardDescription>
+                Last updated: {new Date(page.updatedAt).toLocaleString()} (auto-refreshing)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PageEditForm
+                key={page.updatedAt}
+                pageId={page.noteId}
+                initialContent={page.content}
+                onSuccess={handleEditSuccess}
+              />
+            </CardContent>
+          </Card>
+
+          <QnAPanel pageId={page.noteId} />
+        </div>
       </div>
     </div>
   );
