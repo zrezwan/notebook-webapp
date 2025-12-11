@@ -1,6 +1,7 @@
 package com.notebook.dao;
 
 import com.notebook.config.DatabaseConfig;
+import com.notebook.models.Collaborator;
 import com.notebook.models.Notebook;
 import java.sql.*;
 import java.util.ArrayList;
@@ -219,4 +220,85 @@ public class NotebookDAO {
         nb.setUserRole(rs.getString("user_role"));
         return nb;
     }
+    
+    public Notebook getNotebookById(int notebookId) {
+        String sql = "SELECT n.*, u.name AS owner_name FROM Notebooks n " +
+                     "JOIN Users u ON n.owner_id = u.user_id " +
+                     "WHERE notebook_id = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, notebookId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                Notebook nb = new Notebook();
+                nb.setNotebookId(rs.getInt("notebook_id"));
+                nb.setTitle(rs.getString("title"));
+                nb.setOwnerId(rs.getInt("owner_id"));
+                nb.setOwnerName(rs.getString("owner_name"));
+                nb.setCourseName(rs.getString("course_name"));
+                nb.setVisibility(rs.getString("visibility"));
+                nb.setCreatedAt(rs.getTimestamp("created_at"));
+                nb.setUpdatedAt(rs.getTimestamp("updated_at"));
+                return nb;
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    
+    public boolean isOwner(int userId, int notebookId) {
+        String sql = "SELECT 1 FROM Notebooks WHERE notebook_id = ? AND owner_id = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, notebookId);
+            stmt.setInt(2, userId);
+
+            return stmt.executeQuery().next();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    public List<Collaborator> getCollaborators(int notebookId) {
+        List<Collaborator> list = new ArrayList<>();
+
+        String sql = "SELECT nc.user_id, u.name, u.email, nc.role " +
+                     "FROM NotebookCollaborators nc " +
+                     "JOIN Users u ON nc.user_id = u.user_id " +
+                     "WHERE nc.notebook_id = ?";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, notebookId);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                Collaborator c = new Collaborator();
+                c.setUserId(rs.getInt("user_id"));
+                c.setName(rs.getString("name"));
+                c.setEmail(rs.getString("email"));
+                c.setRole(rs.getString("role"));
+                list.add(c);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+
+    
+
 }
