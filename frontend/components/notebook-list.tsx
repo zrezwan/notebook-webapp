@@ -32,8 +32,8 @@ export function NotebookList({ notebooks }: NotebookListProps) {
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      {notebooks.map((nb) => (
-        <Card key={nb.notebookId}>
+      {notebooks.map((nb, index) => (
+        <Card key={`${nb.notebookId}-${index}`}>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span className="truncate">{nb.title}</span>
@@ -59,4 +59,3 @@ export function NotebookList({ notebooks }: NotebookListProps) {
     </div>
   );
 }
-

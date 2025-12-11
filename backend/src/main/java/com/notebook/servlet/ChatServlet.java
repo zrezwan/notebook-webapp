@@ -55,7 +55,15 @@ public class ChatServlet extends BaseServlet {
             return;
         }
 
-        boolean sent = messageDAO.sendMessage(notebookId, userId, body.text);
+        // Get message type from request, default to "sticky" for backward compatibility
+        String messageType = (body.type != null && !body.type.isBlank()) ? body.type : "sticky";
+        
+        // Store the type in the message text with a prefix (temporary workaround)
+        // Format: [TYPE:sticky]actual message text
+        // or [TYPE:chat]actual message text
+        String messageTextWithType = "[TYPE:" + messageType + "]" + body.text;
+        
+        boolean sent = messageDAO.sendMessage(notebookId, userId, messageTextWithType);
         if (!sent) {
             sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to send message");
             return;
@@ -95,6 +103,7 @@ public class ChatServlet extends BaseServlet {
 
     private static class ChatRequest {
         String text;
+        String type; // Add type field: "sticky" or "chat"
     }
     
     @Override
@@ -127,4 +136,3 @@ public class ChatServlet extends BaseServlet {
         sendSuccess(response, Map.of("message", "Message deleted successfully"));
     }
 }
-

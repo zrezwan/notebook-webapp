@@ -17,6 +17,7 @@ export type ChatMessage = {
   userName?: string;
   messageText: string;
   timestamp: string;
+  type?: "sticky" | "chat"; // Add type to distinguish message types
 };
 
 type Response<T> =
@@ -67,11 +68,26 @@ export const getMessages = async (
       `${process.env.API_URL}/notebooks/messages/${notebookId}`,
       {
         headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store", // Ensure fresh data
       }
     );
     const json: ApiResponse<ChatMessage[]> = await res.json();
     if (!json.success || !json.data) return [];
-    return json.data;
+    
+    // Parse message type from text (workaround for no DB access)
+    // Format: [TYPE:sticky]actual message or [TYPE:chat]actual message
+    return json.data.map(msg => {
+      const typeMatch = msg.messageText.match(/^\[TYPE:(sticky|chat)\]/);
+      if (typeMatch) {
+        return {
+          ...msg,
+          type: typeMatch[1] as "sticky" | "chat",
+          messageText: msg.messageText.replace(/^\[TYPE:(sticky|chat)\]/, "")
+        };
+      }
+      // Default to sticky for backward compatibility
+      return { ...msg, type: "sticky" as const };
+    });
   } catch {
     return [];
   }
@@ -79,7 +95,8 @@ export const getMessages = async (
 
 export const sendMessage = async (
   notebookId: number,
-  text: string
+  text: string,
+  type: "sticky" | "chat" = "sticky" // Add type parameter with default
 ): Promise<Response<{ message: string }>> => {
   const token = await getAuthToken();
   if (!token) return { success: false, error: "Not authenticated" };
@@ -93,7 +110,7 @@ export const sendMessage = async (
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, type }), // Include type in request
       }
     );
     const json: ApiResponse<{ message: string }> = await res.json();
