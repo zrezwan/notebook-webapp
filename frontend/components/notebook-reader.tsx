@@ -7,9 +7,10 @@ import {
   useMemo,
   useState,
 } from "react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
 import { createPage, updatePage } from "@/actions/pages";
 import { ShareNotebookDialog } from "@/components/share-notebook-dialog";
+import { Button } from "@/components/ui/button";
 
 type Notebook = {
   notebookId: number;
@@ -58,6 +59,11 @@ export const NotebookReader = forwardRef<NotebookReaderHandle, Props>(
     }
   }
 
+  function addNewPage() {
+    setPages((prev) => [...prev, { content: "" }]);
+    setActiveIndex(pages.length); // Navigate to the new page
+  }
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight") {
@@ -96,8 +102,11 @@ export const NotebookReader = forwardRef<NotebookReaderHandle, Props>(
 
   const pageNumberLabel = useMemo(() => {
     if (activeIndex < 0) return "Cover";
-    return `Page ${activeIndex + 1}`;
-  }, [activeIndex]);
+    return `Page ${activeIndex + 1} of ${pages.length}`;
+  }, [activeIndex, pages.length]);
+
+  const canGoNext = activeIndex < pages.length - 1;
+  const canGoPrev = activeIndex > -1;
 
   return (
     <div className="space-y-4">
@@ -165,25 +174,73 @@ export const NotebookReader = forwardRef<NotebookReaderHandle, Props>(
               <div className="absolute bottom-3 right-4 text-sm text-muted-foreground bg-white/80 rounded px-2 py-1">
                 {pageNumberLabel}
               </div>
-              <button
-                aria-label="Previous page"
-                className="absolute top-1/2 -translate-y-1/2 left-3 h-12 w-12 rounded-full bg-white/70 hover:bg-white/90 flex items-center justify-center shadow-sm focus:outline-none"
-                onClick={goPrev}
-              >
-                <ArrowLeft className="size-5 text-muted-foreground" />
-              </button>
-              <button
-                aria-label="Next page"
-                className="absolute top-1/2 -translate-y-1/2 right-3 h-12 w-12 rounded-full bg-white/70 hover:bg-white/90 flex items-center justify-center shadow-sm focus:outline-none"
-                onClick={goNext}
-              >
-                <ArrowRight className="size-5 text-muted-foreground" />
-              </button>
+              {canGoPrev && (
+                <button
+                  aria-label="Previous page"
+                  className="absolute top-1/2 -translate-y-1/2 left-3 h-12 w-12 rounded-full bg-white/70 hover:bg-white/90 flex items-center justify-center shadow-sm focus:outline-none"
+                  onClick={goPrev}
+                >
+                  <ArrowLeft className="size-5 text-muted-foreground" />
+                </button>
+              )}
+              {canGoNext ? (
+                <button
+                  aria-label="Next page"
+                  className="absolute top-1/2 -translate-y-1/2 right-3 h-12 w-12 rounded-full bg-white/70 hover:bg-white/90 flex items-center justify-center shadow-sm focus:outline-none"
+                  onClick={goNext}
+                >
+                  <ArrowRight className="size-5 text-muted-foreground" />
+                </button>
+              ) : (
+                <button
+                  aria-label="Add new page"
+                  className="absolute top-1/2 -translate-y-1/2 right-3 h-12 w-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-md focus:outline-none"
+                  onClick={addNewPage}
+                >
+                  <Plus className="size-5" />
+                </button>
+              )}
             </div>
           </div>
+        )}
+      </div>
+
+      {/* Page Controls */}
+      <div className="flex items-center justify-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={goPrev}
+          disabled={!canGoPrev}
+        >
+          <ArrowLeft className="size-4 mr-2" />
+          Previous
+        </Button>
+        <span className="text-sm text-muted-foreground px-4">
+          {activeIndex < 0 ? "Cover" : `Page ${activeIndex + 1} of ${pages.length}`}
+        </span>
+        {canGoNext ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goNext}
+          >
+            Next
+            <ArrowRight className="size-4 ml-2" />
+          </Button>
+        ) : (
+          <Button
+            variant="default"
+            size="sm"
+            onClick={addNewPage}
+          >
+            <Plus className="size-4 mr-2" />
+            Add Page
+          </Button>
         )}
       </div>
     </div>
   );
 });
 
+NotebookReader.displayName = "NotebookReader";
