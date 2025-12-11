@@ -16,6 +16,21 @@ public class NotebookDAO {
      * 3. Notebook is Public
      */
     public boolean canUserAccessNotebook(int userId, int notebookId) {
+        
+        // Guests (userId = -1) can ONLY access public notebooks
+        if (userId == -1) {
+            String sql = "SELECT 1 FROM Notebooks WHERE notebook_id = ? AND visibility = 'Public'";
+            try (Connection conn = DatabaseConfig.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setInt(1, notebookId);
+                ResultSet rs = stmt.executeQuery();
+                return rs.next();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+
         String sql = "SELECT 1 FROM Notebooks n " +
                 "LEFT JOIN NotebookCollaborators nc ON n.notebook_id = nc.notebook_id " +
                 "WHERE n.notebook_id = ? AND " +
@@ -41,6 +56,10 @@ public class NotebookDAO {
      * Check if a user has edit permissions (Owner or Editor)
      */
     public boolean isUserEditor(int userId, int notebookId) {
+
+         // Guests cannot edit ANYTHING
+        if (userId == -1) return false;
+        
         String sql = "SELECT 1 FROM Notebooks n " +
                 "LEFT JOIN NotebookCollaborators nc ON n.notebook_id = nc.notebook_id " +
                 "WHERE n.notebook_id = ? AND " +

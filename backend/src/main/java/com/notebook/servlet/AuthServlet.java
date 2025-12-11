@@ -36,6 +36,7 @@ public class AuthServlet extends BaseServlet {
             case "/register" -> handleRegister(request, response);
             case "/login" -> handleLogin(request, response);
             case "/logout" -> handleLogout(request, response);
+            case "/guest" -> handleGuest(request, response);
             default -> sendError(response, 404, "Endpoint not found");
         }
     }
@@ -155,4 +156,25 @@ public class AuthServlet extends BaseServlet {
                 "email", user.getEmail()
         ));
     }
+
+    private void handleGuest(HttpServletRequest request, HttpServletResponse response)
+        throws IOException {
+
+        // Create a temporary guest user object
+        User guest = new User();
+        guest.setUserId(-1); // special ID for guests
+        guest.setName("Guest");
+        guest.setEmail("guest@notebookapp");
+
+        // Generate JWT with userId = -1  
+        String token = JwtUtil.generateToken(guest);
+
+        sendSuccess(response, Map.of(
+                "userId", guest.getUserId(),
+                "name", guest.getName(),
+                "email", guest.getEmail(),
+                "token", token
+        )); 
+    }      
+
 }
