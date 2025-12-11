@@ -127,6 +127,13 @@ public class NotebookServlet extends BaseServlet {
         String courseName = Objects.requireNonNullElse(body.courseName, "");
 
         int userId = getUserId(request);
+        
+        // Guests cannot create notebooks
+        if (userId == -1) {
+            sendError(response, HttpServletResponse.SC_FORBIDDEN, "Guests cannot create notebooks. Please sign up to create your own notebooks.");
+            return;
+        }
+        
         Integer newId = notebookDAO.createNotebook(userId, body.title, courseName, visibility);
         if (newId == null) {
             sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to create notebook");
