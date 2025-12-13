@@ -13,14 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/password-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 
 const registerSchema = z
   .object({
@@ -63,29 +56,31 @@ export function RegisterForm() {
       return;
     }
 
-    router.push("/home");
+    router.push("/notebooks");
   }
 
   return (
-    <div className="space-y-6">
+    <>
       {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="size-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4">
+          <Alert variant="destructive">
+            <AlertCircle className="size-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </div>
       )}
+      <div className="space-y-6">
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
           <FormField
             control={form.control}
             name="name"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name</FormLabel>
+              <FormItem className="space-y-1.5">
                 <FormControl>
                   <Input
-                    placeholder="John Doe"
+                    placeholder="Name"
                     autoComplete="name"
                     {...field}
                   />
@@ -99,12 +94,11 @@ export function RegisterForm() {
             control={form.control}
             name="email"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
+              <FormItem className="space-y-1.5">
                 <FormControl>
                   <Input
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder="Email"
                     autoComplete="email"
                     {...field}
                   />
@@ -118,11 +112,10 @@ export function RegisterForm() {
             control={form.control}
             name="password"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
+              <FormItem className="space-y-1.5">
                 <FormControl>
                   <PasswordInput
-                    placeholder="Create a password"
+                    placeholder="Password"
                     autoComplete="new-password"
                     {...field}
                   />
@@ -136,11 +129,10 @@ export function RegisterForm() {
             control={form.control}
             name="confirmPassword"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Confirm Password</FormLabel>
+              <FormItem className="space-y-1.5">
                 <FormControl>
                   <PasswordInput
-                    placeholder="Confirm your password"
+                    placeholder="Confirm password"
                     autoComplete="new-password"
                     {...field}
                   />
@@ -162,6 +154,7 @@ export function RegisterForm() {
           Sign in
         </Link>
       </p>
-    </div>
+      </div>
+    </>
   );
 }

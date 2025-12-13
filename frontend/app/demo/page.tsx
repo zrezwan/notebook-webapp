@@ -24,6 +24,16 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+const formatDate = (value: string) => {
+  const date = new Date(value);
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "UTC",
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  }).format(date);
+};
+
 export default function DemoPage() {
   const [content, setContent] = useState(
     "# Welcome to My Notes\n\nThis is a sample page content that can be edited.\n\n## Features\n- Edit page content\n- Delete pages with confirmation\n- View all pages in a notebook"
@@ -49,7 +59,7 @@ export default function DemoPage() {
   ];
 
   return (
-    <div className="min-h-screen p-4 md:p-8 bg-background">
+    <div className="min-h-screen p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-8">
         <div>
           <h1 className="text-3xl font-bold mb-2">Page Edit/Delete Demo</h1>
@@ -139,8 +149,7 @@ export default function DemoPage() {
                         Page {page.noteId}
                       </CardTitle>
                       <CardDescription>
-                        Updated:{" "}
-                        {new Date(page.updatedAt).toLocaleDateString()}
+                        Updated: {formatDate(page.updatedAt)}
                       </CardDescription>
                     </div>
                     <Button variant="outline" size="sm">

@@ -64,6 +64,34 @@ export const login = async (
   }
 }
 
+export const guestLogin = async (): Promise<Response<AuthUser>> => {
+  try {
+    const res = await fetch(`${process.env.API_URL}/auth/guest`, {
+      method: "POST",
+    });
+    const json: ApiResponse<AuthResponse> = await res.json();
+
+    if (!json.success || !json.data) {
+      return { success: false, error: json.error || "Guest login failed" };
+    }
+
+    const { token, ...user } = json.data;
+
+    const cookieStore = await cookies();
+    cookieStore.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: COOKIE_MAX_AGE,
+    });
+
+    return { success: true, data: user };
+  } catch {
+    return { success: false, error: "Failed to connect to server" };
+  }
+}
+
 export const register = async (
   name: string,
   email: string,

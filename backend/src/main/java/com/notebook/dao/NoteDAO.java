@@ -22,13 +22,7 @@ public class NoteDAO {
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
-                Note note = new Note();
-                note.setNoteId(rs.getInt("note_id"));
-                note.setNotebookId(rs.getInt("notebook_id"));
-                note.setContent(rs.getString("content"));
-                note.setCreatedAt(rs.getTimestamp("created_at"));
-                note.setUpdatedAt(rs.getTimestamp("updated_at"));
-                notes.add(note);
+                notes.add(mapNote(rs));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -36,12 +30,26 @@ public class NoteDAO {
         return notes;
     }
 
+    public Note getNoteById(int noteId) {
+        String sql = "SELECT * FROM Notes WHERE note_id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, noteId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return mapNote(rs);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     /**
-     * Create a new note
+     * Create a new note and return the created Note
      */
-    public boolean createNote(int notebookId, String content) {
-        // TODO: Validate content length and format
-        String sql = "INSERT INTO Notes (notebook_id, content) VALUES (?, ?)";
+    public Note createNote(int notebookId, String content) {
+        String sql = "INSERT INTO Notes (notebook_id, content) VALUES (?, ?) RETURNING *";
 
         try (Connection conn = DatabaseConfig.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -49,20 +57,23 @@ public class NoteDAO {
             stmt.setInt(1, notebookId);
             stmt.setString(2, content);
 
-            int rows = stmt.executeUpdate();
-            return rows > 0;
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return mapNote(rs);
+            }
 
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
+            return null;
         }
+        return null;
     }
 
     /**
      * Update an existing note
      */
     public boolean updateNote(int noteId, String content) {
-        String sql = "UPDATE Notes SET content = ? WHERE note_id = ?";
+        String sql = "UPDATE Notes SET content = ?, updated_at = NOW() WHERE note_id = ?";
 
         try (Connection conn = DatabaseConfig.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -97,5 +108,15 @@ public class NoteDAO {
             e.printStackTrace();
             return false;
         }
+    }
+
+    private Note mapNote(ResultSet rs) throws SQLException {
+        Note note = new Note();
+        note.setNoteId(rs.getInt("note_id"));
+        note.setNotebookId(rs.getInt("notebook_id"));
+        note.setContent(rs.getString("content"));
+        note.setCreatedAt(rs.getTimestamp("created_at"));
+        note.setUpdatedAt(rs.getTimestamp("updated_at"));
+        return note;
     }
 }

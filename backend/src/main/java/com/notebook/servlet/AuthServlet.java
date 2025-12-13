@@ -36,6 +36,7 @@ public class AuthServlet extends BaseServlet {
             case "/register" -> handleRegister(request, response);
             case "/login" -> handleLogin(request, response);
             case "/logout" -> handleLogout(request, response);
+            case "/guest" -> handleGuestLogin(request, response);
             default -> sendError(response, 404, "Endpoint not found");
         }
     }
@@ -138,10 +139,34 @@ public class AuthServlet extends BaseServlet {
         sendSuccess(response, Map.of("message", "Logged out successfully"));
     }
 
+    private void handleGuestLogin(HttpServletRequest request, HttpServletResponse response)
+            throws IOException {
+        User guest = new User();
+        guest.setUserId(-1);
+        guest.setName("Guest");
+        guest.setEmail("guest@example.com");
+
+        String token = JwtUtil.generateToken(guest);
+        sendSuccess(response, Map.of(
+                "userId", guest.getUserId(),
+                "name", guest.getName(),
+                "email", guest.getEmail(),
+                "token", token
+        ));
+    }
+
     private void handleGetCurrentUser(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
         int userId = getUserId(request);
+        if (userId <= 0) {
+            sendSuccess(response, Map.of(
+                    "userId", userId,
+                    "name", "Guest",
+                    "email", "guest@example.com"
+            ));
+            return;
+        }
         User user = userDAO.getUserById(userId);
 
         if (user == null) {

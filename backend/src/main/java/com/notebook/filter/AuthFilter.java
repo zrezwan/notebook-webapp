@@ -25,7 +25,8 @@ public class AuthFilter implements Filter {
 
     private static final Set<String> PUBLIC_ENDPOINTS = Set.of(
             "/api/auth/login",
-            "/api/auth/register"
+            "/api/auth/register",
+            "/api/auth/guest"
     );
 
     @Override

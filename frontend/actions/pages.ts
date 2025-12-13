@@ -43,7 +43,7 @@ export const getPagesByNotebook = async (
     }
 
     const res = await fetch(
-      `${process.env.API_URL}/notebooks/${notebookId}/pages`,
+      `${process.env.API_URL}/notebooks/pages/${notebookId}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -158,7 +158,7 @@ export const createPage = async (
     }
 
     const res = await fetch(
-      `${process.env.API_URL}/notebooks/${notebookId}/pages`,
+      `${process.env.API_URL}/notebooks/pages/${notebookId}`,
       {
         method: "POST",
         headers: {

@@ -15,6 +15,16 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
+const formatDate = (value: string) => {
+  const date = new Date(value);
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "UTC",
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  }).format(date);
+};
+
 type Page = {
   noteId: number;
   notebookId: number;
@@ -82,7 +92,7 @@ export function PageList({ notebookId }: PageListProps) {
 
   return (
     <div className="space-y-4">
-      {pages.map((page) => (
+      {(Array.isArray(pages) ? pages : []).map((page) => (
         <Card key={page.noteId}>
           <CardHeader className="pb-2">
             <div className="flex items-start justify-between">
@@ -91,7 +101,7 @@ export function PageList({ notebookId }: PageListProps) {
                   Page {page.noteId}
                 </CardTitle>
                 <CardDescription>
-                  Updated: {new Date(page.updatedAt).toLocaleDateString()}
+                  Updated: {formatDate(page.updatedAt)}
                 </CardDescription>
               </div>
               <Link href={`/notebooks/${notebookId}/pages/${page.noteId}`}>

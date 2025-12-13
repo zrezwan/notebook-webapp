@@ -27,7 +27,18 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <div className="relative min-h-screen">
+          <div
+            className="fixed inset-0 -z-10 bg-center bg-no-repeat"
+            style={{
+              backgroundImage: "url('/backgrounds/pinkMarble.jpg')",
+              backgroundSize: "cover",
+              backgroundAttachment: "fixed",
+              backgroundColor: "#f7f2f4",
+            }}
+          />
+          {children}
+        </div>
       </body>
     </html>
   );

@@ -2,9 +2,31 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+### Option 1: Using Docker (Recommended for Windows)
+
+If you don't have Node.js/npm installed, you can use Docker:
 
 ```bash
+# Build and start the development server
+docker-compose up --build
+
+# Or run in detached mode
+docker-compose up -d --build
+```
+
+The application will be available at [http://localhost:3000](http://localhost:3000)
+
+To stop the container:
+```bash
+docker-compose down
+```
+
+### Option 2: Local Development
+
+If you have Node.js installed:
+
+```bash
+npm install
 npm run dev
 # or
 yarn dev
@@ -15,6 +37,15 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+### Environment Variables
+
+The frontend needs `API_URL` environment variable pointing to your backend:
+- Default in Docker: `http://host.docker.internal:8080/notebook-backend/api`
+- For local development: Create a `.env.local` file with:
+  ```
+  API_URL=http://localhost:8080/notebook-backend/api
+  ```
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
